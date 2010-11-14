@@ -1,0 +1,14 @@
+{% extends "base_page.html" %}
+{% block content %}
+
+<h2>Group details</h2>
+<form action="/take-home-final/" method="POST" enctype="multipart/form-data">
+	<table class="sign-in-table">
+		<tr>
+			<td>Group number:</td>
+			<td><input id="id_student_number" type="text" name="student_number" maxlength="7"/></td>
+			<td><input type="submit" name="mysubmit" value="Sign-in"></td>
+		</tr>
+	</table>
+</form>
+{% endblock %}

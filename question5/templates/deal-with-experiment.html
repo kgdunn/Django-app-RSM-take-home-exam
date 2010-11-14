@@ -1,0 +1,160 @@
+{% extends "base_page.html" %}
+{% block content %}
+
+<style>
+.constraint_OK
+{
+	color:#009900;
+}
+.constraint_violated
+{
+	color:#ee0000;
+}
+</style>
+
+<script>
+function check_joint_constraint(factor_A, factor_B)
+{
+	factor_A = parseFloat(factor_A)
+	factor_B = parseFloat(factor_B)
+	if (factor_A + 2*factor_B <= 500)
+	{
+		document.getElementById("joint_constraint").innerHTML = '   Factor A and B joint constraint: OK';
+		document.getElementById("joint_constraint").className = "constraint_OK";
+	}
+	else
+	{
+		document.getElementById("joint_constraint").innerHTML = '   Factor A and B joint constraint is currently violated';
+		document.getElementById("joint_constraint").className = "constraint_violated";
+	}
+} 
+
+function validate_factor_A(factor_A)
+{
+	var valid = new Boolean(false);
+	if (factor_A >= 390 && factor_A <= 480){
+		value=true;
+		document.getElementById("factor_A_constraint").innerHTML = 'Cooking temperature constraint: OK';
+		document.getElementById("factor_A_constraint").className = "constraint_OK";
+	}
+	else
+	{
+		document.getElementById("factor_A_constraint").innerHTML = 'Cooking temperature constraint: violated';
+		document.getElementById("factor_A_constraint").className = "constraint_violated";
+	}
+	check_joint_constraint(factorA, document.getElementById("factor_B_input").value)
+}
+function validate_factor_B(factor_B)
+{
+	var valid = new Boolean(false);
+	if (factor_B >= 5 && factor_B <= 30){
+		value=true;
+		document.getElementById("factor_B_constraint").innerHTML = 'Sodium hydroxide constraint: OK';
+		document.getElementById("factor_B_constraint").className = "constraint_OK";
+	}
+	else
+	{
+		document.getElementById("factor_B_constraint").innerHTML = 'Sodium hydroxide constraint: violated';
+		document.getElementById("factor_B_constraint").className = "constraint_violated";
+	}
+	check_joint_constraint(document.getElementById("factor_A_input").value, factor_B)
+}
+</script>
+
+<div class="student-details">
+<h2>Group details</h2>
+<table class="sign-in-table">
+	<tr>
+		<td>Group number:</td>
+		<td>{{Student.number}}</td>
+	</tr>
+	<tr>
+                <td>Group names:</td>
+                <td>{{Student.name}}</td>
+        </tr>
+        <tr>
+                <td>Contact email address:</td>
+                <td>{{Student.email}}</td>
+        </tr>
+        <tr>
+                <td>Experiments used so far:</td>
+                <td>{{Student.runs_used_so_far}} (maximum of {{Settings.max_experiments_allowed}} experiments allowed)</td>
+        </tr>
+
+</table>
+</div>
+
+<div class="next-experiment">
+<hr>
+<h2>The next experiment</h2>
+
+Generate the next experiment at the following conditions:
+<form action="/take-home-final/run-experiment-{{Settings.token}}/" method="POST" enctype="multipart/form-data">
+	<table class="data-entry-table">
+		<tr>
+			<td>Cooking temperature:</td>
+			<td><input id="factor_A_input" type="text" name="factor_A" maxlength="7" size="7" onkeyup="validate_factor_A(this.value)" /> K</td>
+			<td width="400"><span id="factor_A_constraint" class="constraint_colour"></span></td>
+		</tr>
+		<tr>
+                        <td>Sodium hydroxide:</td>
+                        <td><input id="factor_B_input" type="text" name="factor_B" maxlength="7" size="7" onkeyup="validate_factor_B(this.value)"/> kg</td>
+			<td width="400"><span id="factor_B_constraint" class="constraint_colour"></span></td>
+                </tr>
+		<tr>
+                        <td>Cellulose:</td>
+                        <td><select name="factor_C"><option value="Absent">Absent
+						    <option value="Present">Present
+			    </select></td>
+			<td width="400"></td>
+                </tr>
+	</table>
+	<input type="hidden" name="_student_number_" maxlength="7" value="{{Student.number}}"/>
+	<input type="submit" name="mysubmit" value="Run my experiment!">
+	<p> <span id="joint_constraint" class="constraint_colour"></span><br>
+</form>
+</div>
+
+<div class="previous-experiments">
+<hr>
+<h2>Previous experiments run</h2>
+
+<a href="/take-home-final/download-csv-{{Settings.token}}/">Download data</a>
+<table class="prev-expts-table">
+    <tr>
+    <th>Experiment number</th>
+    <th>Date and time</th>
+    <th>Cooking temperature [K]</th>
+    <th>Sodium hydroxide [kg]</th>
+    <th>Cellulose</th>
+    <th>Profit [$]</th>
+    </tr>
+    <tr class="even expt-result">
+        <td class="expt-number"></td>
+        <td class="datetime">Baseline</td>
+        <td class="factor_A">440.0</td>
+        <td class="factor_B">20.00</td>
+        <td class="factor_C">Absent</td>
+        <td class="response">13.85</td>
+    </tr>
+
+    {% for expt in PrevExpts %}
+    {%spaceless%}
+    <tr class="{% cycle 'odd' 'even' %} expt-result">
+        <td class="expt-number">{{expt.number}}</td>
+        <td class="datetime">{{expt.date_time|date:"d F Y H:i:s"}}</td>
+	<td class="factor_A">{{expt.factor_A|floatformat:1}}</td>
+	<td class="factor_B">{{expt.factor_B|floatformat:2}}</td>
+        <td class="factor_C">{{expt.factor_C}}</td>
+	<td class="response">{{expt.response|floatformat:2}}</td>
+    </tr>
+    {% endspaceless %}
+    {% endfor %}
+</table>
+<p><img src="/media/rsm/{{Settings.figure_filename}}" width="900"/>
+</div>
+
+<p>Bonus due to profit: {{Student.profit_bonus}}
+<p>Bonus due to runs: {{Student.runs_bonus}}
+
+{% endblock %}
