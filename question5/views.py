@@ -92,19 +92,19 @@ def simulate_process(f_input, category):
     a, b, c, d = 0.0, 45.0, 60.0, 95.0
     fa, fb, fc, fd = 18.7, 14.0, 6.2, 14.1
 
-    if category.upper == 'A':
+    if category.upper() == 'A':
         # A: up-down-fastup, min at 334.7
         nodes = np.array([lo+a, lo+b, lo+c, lo+d])
         f_nodes = np.array([fa, fb, fc, fd])
-    elif category.upper == 'B':
+    elif category.upper() == 'B':
         # B = A flipped LR: fastdown-up-down, min at 298.1
         nodes = np.array([hi-d, hi-c, hi-b, hi-a])
         f_nodes = np.array([fd, fc, fb, fa])
-    elif category.upper == 'C':
+    elif category.upper() == 'C':
         # C = A flipped TB = 25-A = down-up-fastdown, min at 290.5
         nodes = np.array([lo+a, lo+b, lo+c, lo+d])
         f_nodes = np.array([top-fa, top-fb, top-fc, top-fd])
-    elif category.upper == 'D':
+    else:
         # D = B flipped TB = 25-B = fastup-down-up, min at 342.5
         nodes = np.array([hi-d, hi-c, hi-b, hi-a])
         f_nodes = np.array([top-fd, top-fc, top-fb, top-fa])
@@ -131,9 +131,12 @@ def generate_result(student_number, factor, bias, category):
 
     # Add random distrubance to the output
     np.random.seed(int(student_number))
-    z_noisy = z + np.random.normal(loc=0.0, scale=1.0) +\
-                  np.random.normal(loc=0.0, scale=1.0, size=bias)[-1]
-    return (z, z_noisy)
+    error = np.random.normal(loc=0.0, scale=1.0, size=bias)[-1]
+    if np.abs(error) > 1.0:
+        error = 0.95 * np.sign(error)
+    y_noisy = np.max([0.0, y+error])
+
+    return (y, y_noisy)
 
 def plot_results(expts):
     """Plots the data into a PNG figure file"""
@@ -143,17 +146,20 @@ def plot_results(expts):
         factor_A.append(entry['factor_A'])
         response.append(entry['response'])
 
+    if len(response)==0:
+        response = [0]
+
     data_string = str(factor_A) + str(response)
     filename = hashlib.md5(data_string).hexdigest() + '.png'
     full_filename = MEDIA_DIR + filename
 
     # Baseline and limits
-    baseline_xA = 440
-    limits_A = [278.0, 355.0]
+    plot_limits_A = [270.0, 360.0]
+    limits_response = [0.0, np.max([35.0, np.max(response)])]
 
     # Offsets for labeling points
-    dx = 1.2
-    dy = 0.05
+    dx = 1.5
+    dy = 0.5
 
     # Create the figure
     import matplotlib as matplotlib
@@ -173,37 +179,24 @@ def plot_results(expts):
         pass
         # TODO(KGD): code here to plot true result
 
-    # Baseline marker and label
-    #ax.text(baseline_xA, baseline_xB, "    Baseline", horizontalalignment='left', verticalalignment='center', color="#0000FF")
-    #ax.plot(baseline_xA, baseline_xB, 'b.', linewidth=2, ms=20)
+    for idx, entry_A in enumerate(factor_A):
+        ax.plot(entry_A, response[idx], 'k.', ms=20)
+        ax.text(entry_A+dx, response[idx]+dy, str(idx+1))
 
-    #for idx, entry_A in enumerate(factor_A):
-        #jitter_x = np.random.normal(loc=0.0, scale=0.3)
-        #jitter_y = np.random.normal(loc=0.0, scale=0.05)
-        #if factor_C[idx] == 'Absent':
-            #ax.plot(entry_A+jitter_x, factor_B[idx]+jitter_y, 'k.', ms=20)
-        #else:
-            #ax.plot(entry_A+jitter_x, factor_B[idx]+jitter_y, 'r.', ms=20)
-        #ax.text(entry_A+jitter_x+dx, factor_B[idx]+jitter_y+dy, str(idx+1))
+    ax.set_xlim(plot_limits_A)
+    ax.set_ylim(limits_response)
 
-    #ax.plot(455, 28, 'k.', ms=20)
-    #ax.text(455+dx, 28, 'Cellulose: absent', va='center', ha='left')
-
-    #ax.plot(455, 26, 'r.', ms=20)
-    #ax.text(455+dx, 26, 'Cellulose: present', va='center', ha='left')
-
-    #ax.set_xlim(limits_A)
-    #ax.set_ylim(limits_B)
-
-    ## Grid lines
-    #ax.grid(color='k', linestyle=':', linewidth=1)
-    ##for grid in ax.yaxis.get_gridlines():
-    ##     grid.set_visible(False)
+    # Grid lines
+    ax.grid(color='k', linestyle=':', linewidth=1)
+    #for grid in ax.yaxis.get_gridlines():
+    #     grid.set_visible(False)
 
     from matplotlib.backends.backend_agg import FigureCanvasAgg
-    canvas=FigureCanvasAgg(fig)
     my_logger.debug('Saving figure: ' + full_filename)
-    fig.savefig(full_filename, dpi=150, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format=None, transparent=True)
+    canvas=FigureCanvasAgg(fig)
+    fig.savefig(full_filename, dpi=150, facecolor='w',
+                edgecolor='w', orientation='portrait',
+                papertype=None, format=None, transparent=True)
 
     return filename
 
@@ -245,8 +238,10 @@ def get_experiment_list(the_student):
     prev_expts = []
     counter = 1
     for item in Experiment.objects.select_related().filter(student=the_student.student_number):
-        prev_expts.append({'factor_A': item.factor_A, 'factor_B': item.factor_B, 'factor_C': item.factor_C,
-                            'response': item.response_noisy, 'date_time': item.date_time, 'number': counter})
+        prev_expts.append({'factor_A': item.factor_A,
+                            'response': item.response_noisy,
+                            'date_time': item.date_time,
+                            'number': counter})
         counter += 1
     return prev_expts
 
@@ -267,16 +262,8 @@ def render_next_experiment(the_student, request):
     prev_expts = get_experiment_list(the_student)
 
     # Calculate bonus marks
-    response = [-10000.0]
-    for entry in prev_expts:
-        response.append(entry['response'])
-    highest_profit = np.max(response)
-    my_logger.debug('profit = ' + str(highest_profit))
-    max_profit = 420.0
-    baseline = 13.85
-    student['profit_bonus'] =  1.5 * (highest_profit - baseline) / (max_profit - baseline)
-    student['runs_bonus'] = -0.15 * the_student.runs_used_so_far + 3.0
-
+    student['profit_bonus'] = 1.0
+    student['runs_bonus'] = np.max([4.0-the_student.runs_used_so_far,0])/4.0
 
     # Generate a picture of previous experiments
     filename = django_settings.MEDIA_URL + plot_results(prev_expts)
@@ -290,7 +277,6 @@ def render_next_experiment(the_student, request):
 
     my_logger.debug('Dealing with student = ' + str(the_student.student_number) + '; has run ' + str(len(prev_expts)) + ' already.')
     t = loader.get_template("deal-with-experiment.html")
-    c = {}
     context_dict = {'PrevExpts': prev_expts, 'Student': student, 'Settings': settings}
     context_dict.update(csrf(request))
     return HttpResponse(t.render(Context(context_dict)))
@@ -311,8 +297,8 @@ def run_experiment(request, token):
     """
     my_logger.debug('Running experiment with token=' + str(token))
     if request.method != 'POST':
-        my_logger.debug('Non-POST access to `run_experiment` - not sure how that is possible')
-        return render_to_response('sign_in_form.html')
+        my_logger.debug('Non-POST access to `run_experiment`: user is page refreshing an experiment page.')
+        return HttpResponseRedirect('/take-home-exam/')
 
     # This is a hidden field
     student_number = request.POST.get('_student_number_', '')
@@ -369,8 +355,10 @@ def run_experiment(request, token):
     response, response_noisy = generate_result(student_number, factor_A,
                                         bias=the_student.runs_used_so_far+1,
                                         category = the_student.category)
-    expt = Experiment.objects.get_or_create(student=the_student, factor_A=factor_A, factor_B=factor_B, factor_C=factor_C, response=response,
-                                            response_noisy=response_noisy)
+    _ = Experiment.objects.get_or_create(student=the_student,
+                                          factor_A=factor_A,
+                                          response=response,
+                                          response_noisy=response_noisy)
 
     the_student.runs_used_so_far = the_student.runs_used_so_far + 1
     the_student.save()

@@ -8,10 +8,11 @@ class Student(models.Model):
     grad_student = models.BooleanField()
     runs_used_so_far = models.IntegerField(default=0)
     # Category A, B, C, or D: determines which function the student sees.
-    category - models.CharField(max_length=1)
+    category = models.CharField(max_length=1)
 
     def __unicode__(self):
-        return u'%s %s' % (self.first_name, self.runs_used_so_far)
+        return u'%s, %d, %s ' % (self.first_name, self.runs_used_so_far,
+                                 self.category)
 
 class Experiment(models.Model):
     student = models.ForeignKey(Student)
