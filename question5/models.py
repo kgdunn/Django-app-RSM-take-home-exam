@@ -7,27 +7,22 @@ class Student(models.Model):
     email_address = models.EmailField()
     grad_student = models.BooleanField()
     runs_used_so_far = models.IntegerField(default=0)
+    # Category A, B, C, or D: determines which function the student sees.
+    category - models.CharField(max_length=1)
 
     def __unicode__(self):
-        return u'%s %s, %i, 400=%s' % (self.first_name, self.last_name, self.runs_used_so_far, str(not self.grad_student))
+        return u'%s %s' % (self.first_name, self.runs_used_so_far)
 
 class Experiment(models.Model):
-
-    factor_C_choice = (
-            ('Absent', u'Absent'),
-            ('Present', u'Present'),
-            )
-
     student = models.ForeignKey(Student)
     factor_A = models.FloatField()
-    factor_B = models.FloatField()
-    factor_C = models.CharField(choices=factor_C_choice, max_length=10)
     response = models.FloatField()
     response_noisy = models.FloatField()
     date_time = models.DateTimeField(auto_now=False, auto_now_add=True)
 
     def __unicode__(self):
-        return u'%s, (%s, %s, %s) = %s at %s' % (str(self.student), str(self.factor_A), str(self.factor_B), self.factor_C, str(self.response_noisy), str(self.date_time))
+        return u'%s, %s, %s, %s' % (str(self.student), str(self.factor_A),
+                                str(self.response_noisy), str(self.date_time))
 
 
 class Token(models.Model):

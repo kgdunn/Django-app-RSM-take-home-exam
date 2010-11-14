@@ -2,7 +2,7 @@
 {% block content %}
 
 <h2>Group details</h2>
-<form action="/take-home-final/" method="POST" enctype="multipart/form-data">
+<form action="/take-home-exam/" method="POST" enctype="multipart/form-data">{% csrf_token %}
 	<table class="sign-in-table">
 		<tr>
 			<td>Group number:</td>
