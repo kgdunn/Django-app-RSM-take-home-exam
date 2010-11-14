@@ -5,8 +5,8 @@ from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
 #from django.contrib import auth
 #from django.contrib.auth.models import User
-from django.conf import settings as django_settings
 
+import os
 import numpy as np
 import hashlib as hashlib
 
@@ -15,28 +15,19 @@ import hashlib as hashlib
 #sys.path.extend(['/var/django/projects/'])
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'question5.settings'
 
-# TODO
-
-# figure_filename': filename} : must include MEDIA_URL path
-
-
 from takehome.question5.models import Student, Token, Experiment
 
 # Improvements for next time
-#
-# * sign in, generate a token, email that token: they have to access all their
-#   experiments from that tokenized page: prevents other students look at each
-#   others experiments.
+# --------------------------
 # * factors is a variable, so you can have unlimited number of factors
 # * PDF download link (using ReportLab to create the PDF)
 
-
 # SETTINGS
 # --------
-
 # Django application location (must end with trailing slash)
 base_dir = '/home/kevindunn/django-projects/takehome/question5/'
 MEDIA_DIR = base_dir + 'media/'
+MEDIA_URL = '/take-home-exam/media/'
 
 # Logging
 LOG_FILENAME = base_dir + 'logfile.log'
@@ -89,25 +80,26 @@ def simulate_process(f_input, category):
     """
     lo, hi = 300.0, 400.0
     top = 25.0
+    bottom = 2.0
     a, b, c, d = 0.0, 45.0, 60.0, 95.0
     fa, fb, fc, fd = 18.7, 14.0, 6.2, 14.1
 
     if category.upper() == 'A':
         # A: up-down-fastup, min at 334.7
         nodes = np.array([lo+a, lo+b, lo+c, lo+d])
-        f_nodes = np.array([fa, fb, fc, fd])
+        f_nodes = np.array([fa, fb, fc, fd]) + bottom
     elif category.upper() == 'B':
         # B = A flipped LR: fastdown-up-down, min at 298.1
         nodes = np.array([hi-d, hi-c, hi-b, hi-a])
-        f_nodes = np.array([fd, fc, fb, fa])
+        f_nodes = np.array([fd, fc, fb, fa]) + bottom
     elif category.upper() == 'C':
         # C = A flipped TB = 25-A = down-up-fastdown, min at 290.5
         nodes = np.array([lo+a, lo+b, lo+c, lo+d])
-        f_nodes = np.array([top-fa, top-fb, top-fc, top-fd])
+        f_nodes = np.array([top-fa, top-fb, top-fc, top-fd])+ bottom
     else:
         # D = B flipped TB = 25-B = fastup-down-up, min at 342.5
         nodes = np.array([hi-d, hi-c, hi-b, hi-a])
-        f_nodes = np.array([top-fd, top-fc, top-fb, top-fa])
+        f_nodes = np.array([top-fd, top-fc, top-fb, top-fa]) + bottom
 
     # Shrink/stretch the nodes:
     lo_new, hi_new = 278, 355.0
@@ -131,14 +123,15 @@ def generate_result(student_number, factor, bias, category):
 
     # Add random distrubance to the output
     np.random.seed(int(student_number))
-    error = np.random.normal(loc=0.0, scale=1.0, size=bias)[-1]
-    if np.abs(error) > 1.0:
-        error = 0.95 * np.sign(error)
+
+    error = np.random.normal(loc=0.0, scale=1.0, size=bias*2)[-1]
+    while np.abs(error) >= 1.0:
+        error = np.random.normal(loc=0.0, scale=1.0, size=bias)[-1]
     y_noisy = np.max([0.0, y+error])
 
     return (y, y_noisy)
 
-def plot_results(expts):
+def plot_results(expts, category):
     """Plots the data into a PNG figure file"""
     factor_A = []
     response = []
@@ -149,9 +142,13 @@ def plot_results(expts):
     if len(response)==0:
         response = [0]
 
-    data_string = str(factor_A) + str(response)
+    data_string = str(factor_A) + str(response) + str(category)
     filename = hashlib.md5(data_string).hexdigest() + '.png'
     full_filename = MEDIA_DIR + filename
+
+    # Don't regenerate plot if it already exists
+    if os.path.exists(full_filename):
+        return filename
 
     # Baseline and limits
     plot_limits_A = [270.0, 360.0]
@@ -176,8 +173,11 @@ def plot_results(expts):
 
     my_logger.debug('Show_result status = ' + str(show_result))
     if show_result:
-        pass
-        # TODO(KGD): code here to plot true result
+        lo_new = 278.0
+        hi_new = 355.0
+        T = np.arange(lo_new, hi_new, 0.1)
+        y = simulate_process(T, category)
+        ax.plot(T, y, 'r-')
 
     for idx, entry_A in enumerate(factor_A):
         ax.plot(entry_A, response[idx], 'k.', ms=20)
@@ -210,7 +210,6 @@ def sign_in(request):
     """
     Verifies the user. If they are registered, then proceed with the experimental results
     """
-    my_logger.debug('Sign-in page activated')
     if request.method == 'POST':
         form_student_number = request.POST.get('student_number', '')
         my_logger.debug('Student number (POST: sign_in) = '+ str(form_student_number))
@@ -266,7 +265,7 @@ def render_next_experiment(the_student, request):
     student['runs_bonus'] = np.max([4.0-the_student.runs_used_so_far,0])/4.0
 
     # Generate a picture of previous experiments
-    filename = django_settings.MEDIA_URL + plot_results(prev_expts)
+    filename = MEDIA_URL + plot_results(prev_expts, the_student.category)
 
     token_string = generate_random_token()
     Token.objects.get_or_create(token_string=token_string, student=the_student, active=True)
@@ -287,7 +286,7 @@ def setup_experiment(request, student_number):
     Returns the web-page where the student can request a new experiment.
     We can assume the student is already registered.
     """
-    my_logger.debug('About to run experiment for student = ' + str(student_number))
+    #my_logger.debug('About to run experiment for student = ' + str(student_number))
     the_student = Student.objects.get(student_number=student_number)
     return render_next_experiment(the_student, request)
 
@@ -382,7 +381,7 @@ def download_values(request, token):
     response = HttpResponse(mimetype='text/csv')
     response['Content-Disposition'] = 'attachment; filename=experiment-results-' + the_student.student_number + '.csv'
     writer = csv.writer(response)
-    writer.writerow(['Number', 'DateTime', 'Jacket temperature', 'Concentration of D'])
+    writer.writerow(['Experiment_Number', 'Date_Time', 'Jacket_Temperature', 'Concentration_of_D'])
     for expt in prev_expts:
         writer.writerow([str(expt['number']),
                          expt['date_time'].strftime('%d %B %Y %H:%M:%S'),
