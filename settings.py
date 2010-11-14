@@ -1,7 +1,7 @@
 # Django settings for takehome project.
 
 DEBUG = True
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
     ('Kevin Dunn', 'dunnkg@mcmaster.ca'),
@@ -12,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'question5.db',          # Or path to database file if using sqlite3.
+        'NAME': '/home/kevindunn/webapps/takehome/takehome/question5.db',
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -45,20 +45,20 @@ USE_L10N = True
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = '/var/www/django-media/experiment/'
+MEDIA_ROOT = '/home/kevindunn/webapps/all_media_htaccess/takehome'
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
-MEDIA_URL = '/media/'
+MEDIA_URL = 'http://takehome.modelling3e4.connectmv.com/media/'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+ADMIN_MEDIA_PREFIX = 'http://takehome.modelling3e4.connectmv.com/media/admin/'
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'e9ncya3e5b2zguxl+vkk!(61*zh3da0zors5s6f0yv!*^jn&8('
+SECRET_KEY = 'y8&6p#_9qbwe!!r87%_g*oxy*#$5f0o^y=a@=e@14_)*u1^@vh'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -81,7 +81,6 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    '/home/kevindunn/django-projects/takehome/question5/templates',
 )
 
 INSTALLED_APPS = (
@@ -91,5 +90,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.admin',
+    'django.contrib.admindocs',
+
     'takehome.question5',
 )

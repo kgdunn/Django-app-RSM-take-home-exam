@@ -25,9 +25,9 @@ from takehome.question5.models import Student, Token, Experiment
 # SETTINGS
 # --------
 # Django application location (must end with trailing slash)
-base_dir = '/home/kevindunn/django-projects/takehome/question5/'
+base_dir = '/home/kevindunn/webapps/takehome/takehome/question5/'
 MEDIA_DIR = base_dir + 'media/'
-MEDIA_URL = '/take-home-exam/media/'
+MEDIA_URL = '/media/'
 
 # Logging
 LOG_FILENAME = base_dir + 'logfile.log'
