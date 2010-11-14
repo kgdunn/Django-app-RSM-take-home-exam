@@ -58,7 +58,7 @@ function validate_factor_A(factor_A)
 
 
 
-<form action="/take-home-exam/run-experiment-{{Settings.token}}/" method="POST" enctype="multipart/form-data">{% csrf_token %}
+<form action="/run-experiment-{{Settings.token}}/" method="POST" enctype="multipart/form-data">{% csrf_token %}
 Generate the next experiment at the following jacket temperature:
 <input id="factor_A_input" type="text" name="factor_A" maxlength="7" size="7" onkeyup="validate_factor_A(this.value)" /> K
 <span id="factor_A_constraint" class="constraint_colour"></span>
@@ -72,7 +72,7 @@ Generate the next experiment at the following jacket temperature:
 <hr>
 <h2>Previous experiments run</h2>
 
-<a href="/take-home-exam/download-values-{{Settings.token}}/">Download data</a>
+<a href="/download-values-{{Settings.token}}/">Download data</a>
 <table class="prev-expts-table">
     <tr>
 		<th>Experiment number</th>

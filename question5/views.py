@@ -1,10 +1,7 @@
 from django.template import loader, Context
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
-#from django.contrib.auth.decorators import login_required
 from django.core.context_processors import csrf
-#from django.contrib import auth
-#from django.contrib.auth.models import User
 
 import os
 import numpy as np
@@ -27,7 +24,7 @@ from takehome.question5.models import Student, Token, Experiment
 # Django application location (must end with trailing slash)
 base_dir = '/home/kevindunn/webapps/takehome/takehome/question5/'
 MEDIA_DIR = base_dir + 'media/'
-MEDIA_URL = '/media/'
+MEDIA_URL = '/media/takehome/'
 
 # Logging
 LOG_FILENAME = base_dir + 'logfile.log'
@@ -46,7 +43,7 @@ my_logger.debug('A new call to the views.py file')
 # Settings
 token_length = 10
 max_experiments_allowed = 8
-show_result = True
+show_result = False
 
 def lagrange(x, xx, yy):
     """
@@ -219,7 +216,7 @@ def sign_in(request):
             _ = Student.objects.get(student_number=form_student_number)
         except Student.DoesNotExist:
             # If student number not in list, tell them they are not registered
-            return HttpResponseRedirect('/take-home-exam/not-registered')
+            return HttpResponseRedirect('/not-registered')
         else:
             return setup_experiment(request, form_student_number)
 
@@ -297,7 +294,7 @@ def run_experiment(request, token):
     my_logger.debug('Running experiment with token=' + str(token))
     if request.method != 'POST':
         my_logger.debug('Non-POST access to `run_experiment`: user is page refreshing an experiment page.')
-        return HttpResponseRedirect('/take-home-exam/')
+        return HttpResponseRedirect('/')
 
     # This is a hidden field
     student_number = request.POST.get('_student_number_', '')
