@@ -43,7 +43,109 @@ my_logger.debug('A new call to the views.py file')
 # Settings
 token_length = 10
 max_experiments_allowed = 8
-show_result = False
+show_result = True
+
+def spline(x, xx, yy):
+    """
+    Fits the cubic spline through the 4 points
+    """
+    if isinstance(x, list):
+        x = np.array(x)
+    elif isinstance(x, (float, int)):
+        x = np.array([float(x)])
+
+    A = np.zeros((12,12))
+    A[0,2] = 2
+    A[0,3] = 6*xx[0]
+    A[1,0] = 1
+    A[1,1] = xx[0]
+    A[1,2] = xx[0]**2
+    A[1,3] = xx[0]**3
+    A[2,0] = 1
+    A[2,1] = xx[1]
+    A[2,2] = xx[1]**2
+    A[2,3] = xx[1]**3
+    A[3,1] = 1
+    A[3,2] = 2*xx[1]
+    A[3,3] = 3*xx[1]**2
+    A[3,5] = -1
+    A[3,6] = -2*xx[1]
+    A[3,7] = -3*xx[1]**2
+    A[4,2] = 2
+    A[4,3] = 6*xx[1]
+    A[4,6] = -2
+    A[4,7] = -6*xx[1]
+    A[5,4] = 1
+    A[5,5] = xx[1]
+    A[5,6] = xx[1]**2
+    A[5,7] = xx[1]**3
+    A[6,4] = 1
+    A[6,5] = xx[2]
+    A[6,6] = xx[2]**2
+    A[6,7] = xx[2]**3
+    A[7,5] = 1
+    A[7,6] = 2*xx[2]
+    A[7,7] = 3*xx[2]**2
+    A[7,9] = -1
+    A[7,10] = -2*xx[2]
+    A[7,11] = -3*xx[2]**2
+    A[8,6] = 2
+    A[8,7] = 6*xx[2]
+    A[8,10] = -2
+    A[8,11] = -6*xx[2]
+    A[9,8] = 1
+    A[9,9] = xx[2]
+    A[9,10] = xx[2]**2
+    A[9,11] = xx[2]**3
+    A[10,8] = 1
+    A[10,9] = xx[3]
+    A[10,10] = xx[3]**2
+    A[10,11] = xx[3]**3
+    A[11,10] = 2
+    A[11,11] = 6*xx[3]
+
+    b = np.zeros((12,1))
+    b[1] = yy[0]
+    b[2] = yy[1]
+    b[5] = yy[1]
+    b[6] = yy[2]
+    b[9] = yy[2]
+    b[10] = yy[3]
+
+    coef = np.linalg.solve(A, b)
+    coefsp = coef.flatten().tolist()
+    coefsp.insert(0,np.nan)
+
+    def s1(x):
+        """ Spline connecting nodes 1 and 2 """
+        coef = np.array([ 0.0953, 0, 0.1457, 0.1000])
+        # Note: polynomial coefficients in Python go from the
+        #       highest power to the lower power.
+        return np.polyval(coefsp[4:0:-1], x)
+
+    def s2(x):
+        """ Spline connecting nodes 2 and 3 """
+        return np.polyval(coefsp[8:4:-1], x)
+
+    def s3(x):
+        """ Spline connecting nodes 3 and 4 """
+        return np.polyval(coefsp[12:8:-1], x)
+
+    # Since ``x`` can be a vector, we must iterate through the vector
+    # and evalute the polynomial at each entry in ``x``.  Use the
+    # ``enumerate`` function in Python.
+    y = np.zeros(x.shape)
+    for k, val in enumerate(x):
+
+        # Find which polynomial to use, based on the value of ``val``:
+        if val < xx[1]:
+            y[k] = s1(val)
+        elif val < xx[2]:
+            y[k] = s2(val)
+        else:
+            y[k] = s3(val)
+
+    return y
 
 def lagrange(x, xx, yy):
     """
@@ -78,8 +180,8 @@ def simulate_process(f_input, category):
     lo, hi = 300.0, 400.0
     top = 25.0
     bottom = 2.0
-    a, b, c, d = 0.0, 45.0, 60.0, 95.0
-    fa, fb, fc, fd = 18.7, 14.0, 6.2, 14.1
+    a, b, c, d = 0.0, 49.0, 66.0, 91.0
+    fa, fb, fc, fd = 16.7, 14.0, 4.2, 12.1
 
     if category.upper() == 'A':
         # A: up-down-fastup, min at 334.7
@@ -103,7 +205,7 @@ def simulate_process(f_input, category):
     slope = (hi_new-lo_new) / (hi - lo)
     nodes = (nodes - lo)*slope + lo_new
 
-    return lagrange(f_input, nodes, f_nodes)
+    return spline(f_input, nodes, f_nodes)
 
 def get_IP_address(request):
     """
