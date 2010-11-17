@@ -105,6 +105,23 @@ def simulate_process(f_input, category):
 
     return lagrange(f_input, nodes, f_nodes)
 
+def get_IP_address(request):
+    """
+    Returns the visitor's IP address as a string.
+    """
+    # Catchs the case when the user is on a proxy
+    try:
+        ip = request.META['HTTP_X_FORWARDED_FOR']
+    except KeyError:
+        ip = ''
+    else:
+        # HTTP_X_FORWARDED_FOR is a comma-separated list; take first IP:
+        ip = ip.split(',')[0]
+
+    if ip == '' or ip.lower() == 'unkown':
+        ip = request.META['REMOTE_ADDR']      # User is not on a proxy
+    return ip
+
 def generate_random_token():
     import random
     return ''.join([random.choice('ABCEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz2345689') for i in range(token_length)])
@@ -222,7 +239,7 @@ def sign_in(request):
 
     # Non-POST access of the sign-in page: display the login page to the user
     else:
-        my_logger.debug('Non-POST sign-in')
+        my_logger.debug('Non-POST sign-in from %s' % get_IP_address(request))
         c = {}
         c.update(csrf(request))
         return render_to_response('sign_in_form.html', c)
@@ -271,7 +288,7 @@ def render_next_experiment(the_student, request):
                 'token': token_string,
                 'figure_filename': filename}
 
-    my_logger.debug('Dealing with student = ' + str(the_student.student_number) + '; has run ' + str(len(prev_expts)) + ' already.')
+    my_logger.debug('Dealing with student = ' + str(the_student.student_number) + '(%s)' % get_IP_address(request) + '; has run ' + str(len(prev_expts)) + ' already.')
     t = loader.get_template("deal-with-experiment.html")
     context_dict = {'PrevExpts': prev_expts, 'Student': student, 'Settings': settings}
     context_dict.update(csrf(request))
