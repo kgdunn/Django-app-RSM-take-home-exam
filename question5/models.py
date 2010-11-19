@@ -25,6 +25,8 @@ class Experiment(models.Model):
         return u'%s, %s, %s, %s' % (str(self.student), str(self.factor_A),
                                 str(self.response_noisy), str(self.date_time))
 
+    class Meta:
+        ordering = ("-date_time",)
 
 class Token(models.Model):
     student = models.ForeignKey(Student)
