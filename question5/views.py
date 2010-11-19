@@ -43,7 +43,7 @@ my_logger.debug('A new call to the views.py file')
 # Settings
 token_length = 10
 max_experiments_allowed = 8
-show_result = True
+show_result = False
 
 def spline(x, xx, yy):
     """
