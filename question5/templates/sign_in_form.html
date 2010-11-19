@@ -5,9 +5,12 @@
 <form action="/" method="POST" enctype="multipart/form-data">{% csrf_token %}
 	<table class="sign-in-table">
 		<tr>
-			<td>Group number:</td>
+			<td>Group number *</td>
 			<td><input id="id_student_number" type="text" name="student_number" maxlength="7"/></td>
 			<td><input type="submit" name="mysubmit" value="Sign-in"></td>
+		</tr>
+		<tr>
+			<td colspan="3">* This is the group number that was emailed to you</td>
 		</tr>
 	</table>
 </form>
