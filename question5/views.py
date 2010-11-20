@@ -3,6 +3,12 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
 
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import mm
+from reportlab.lib import colors
+from reportlab.platypus import (Table, Frame, TableStyle, Image)
+
 import os
 import numpy as np
 import hashlib as hashlib
@@ -488,22 +494,52 @@ def download_values(request, token):
     """ From the download link on the output"""
     token_item = Token.objects.filter(token_string=token)
     the_student = token_item[0].student
-    my_logger.debug('Generating CSV file for token = ' + str(token) + '; student number = ' + the_student.student_number)
+    my_logger.debug('Generating PDF file for token = ' + str(token) + '; student number = ' + the_student.student_number)
+    PDF_filename = 'question5-takehome-%s-%s.pdf' % (token, the_student.student_number)
+
+    response = HttpResponse(mimetype='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename=%s' % PDF_filename
+
+    c = canvas.Canvas(response, pagesize=letter)
+    W, H = letter
+    RMARGIN = LMARGIN = 20*mm
+    TMARGIN = 35*mm
+    BMARGIN = 20*mm
+
+    c.setFont("Helvetica-Bold", 20)
+    c.drawCentredString(W/2, H-TMARGIN, '3E4 take-home exam: question 5 report')
+    text = c.beginText(LMARGIN, H-TMARGIN-15*mm)
+    text.setFont("Helvetica-Bold", 15)
+    text.textLines('Student name(s): %s\n' % the_student.first_name)
+    text.textLines('Group number: %s\n' % the_student.student_number)
+    c.drawText(text)
+
+    # Collect experimental results together:
+    frameWidth = W - (LMARGIN + RMARGIN)
+    frameHeight = H - (TMARGIN + BMARGIN+30*mm)
+    frame = Frame(LMARGIN, BMARGIN, frameWidth, frameHeight, showBoundary=0)
+    table_data = [['Experiment number', 'Date/Time of experiment', 'Jacket temperature [K]', 'Concentration of D [mol/L]']]
 
     prev_expts = get_experiment_list(the_student)
-
-    # Create CSV response object
-    import csv
-    response = HttpResponse(mimetype='text/csv')
-    response['Content-Disposition'] = 'attachment; filename=experiment-results-' + the_student.student_number + '.csv'
-    writer = csv.writer(response)
-    writer.writerow(['Experiment_Number', 'Date_Time', 'Jacket_Temperature', 'Concentration_of_D'])
     for expt in prev_expts:
-        writer.writerow([str(expt['number']),
-                         expt['date_time'].strftime('%d %B %Y %H:%M:%S'),
-                         str(expt['factor_A']),
-                         str(round(expt['response'],2)),
-                         ])
-    return response
+        table_data.append([str(expt['number']),
+                           expt['date_time'].strftime('%d %B %Y %H:%M:%S'),
+                           str(expt['factor_A']),
+                           str(round(expt['response'],2))])
 
+    tblStyle = TableStyle([('BOX',(0,0), (-1,-1), 2,colors.black),
+                            ('BOX',(0,0), (-1,0), 1,colors.black),
+                            ('FONT',(0,0), (-1,0), 'Helvetica-Bold',10)])
+    table_obj = Table(table_data, style=tblStyle)
+
+
+    frame.addFromList([table_obj], c)
+
+    filename = MEDIA_DIR + plot_results(prev_expts, the_student.category)
+    c.drawImage(filename,LMARGIN,BMARGIN,
+                width=0.75*W, preserveAspectRatio=True, anchor='sw')
+    c.showPage()
+    c.save()
+
+    return response
 

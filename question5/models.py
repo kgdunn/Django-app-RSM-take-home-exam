@@ -26,7 +26,7 @@ class Experiment(models.Model):
                                 str(self.response_noisy), str(self.date_time))
 
     class Meta:
-        ordering = ("-date_time",)
+        ordering = ("date_time",)
 
 class Token(models.Model):
     student = models.ForeignKey(Student)
