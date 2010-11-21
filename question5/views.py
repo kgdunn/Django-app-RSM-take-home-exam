@@ -22,8 +22,11 @@ from takehome.question5.models import Student, Token, Experiment
 
 # Improvements for next time
 # --------------------------
-# * factors is a variable, so you can have unlimited number of factors
-# * PDF download link (using ReportLab to create the PDF)
+# * factors is a variable (list/dict), so you can have unlimited number of factors
+# * registration is semi-automatic: they fill in a form with their names and 
+#   student numbers, an alternative email address and it sends me an email.  I will
+#   click in a link in the email that will create a student profile, in the desired
+#   category and send them notification.
 
 # SETTINGS
 # --------
