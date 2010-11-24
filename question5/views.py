@@ -55,7 +55,7 @@ my_logger.debug('A new call to the views.py file')
 # Settings
 token_length = 10
 max_experiments_allowed = 0
-show_result = False
+show_result = True
 
 def spline(x, xx, yy):
     """
@@ -270,7 +270,7 @@ def plot_results(expts, category):
     if len(response)==0:
         response = [0]
 
-    data_string = str(factor_A) + str(response) + str(category)
+    data_string = str(factor_A) + str(response) + str(category) + str(show_result)
     filename = hashlib.md5(data_string).hexdigest() + '.png'
     full_filename = MEDIA_DIR + filename
 
