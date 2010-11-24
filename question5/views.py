@@ -9,6 +9,9 @@ from reportlab.lib.units import mm
 from reportlab.lib import colors
 from reportlab.platypus import (Table, Frame, TableStyle, Image)
 
+import matplotlib as matplotlib
+from matplotlib.figure import Figure  # for plotting
+
 import os
 import numpy as np
 import hashlib as hashlib
@@ -51,7 +54,7 @@ my_logger.debug('A new call to the views.py file')
 
 # Settings
 token_length = 10
-max_experiments_allowed = 8
+max_experiments_allowed = 0
 show_result = False
 
 def spline(x, xx, yy):
@@ -284,8 +287,6 @@ def plot_results(expts, category):
     dy = 0.5
 
     # Create the figure
-    import matplotlib as matplotlib
-    from matplotlib.figure import Figure  # for plotting
     matplotlib.rcParams['xtick.direction'] = 'out'
     matplotlib.rcParams['ytick.direction'] = 'out'
 
@@ -453,9 +454,7 @@ def run_experiment(request, token):
         return HttpResponse(t.render(c))
 
     # Check if the user has enough experiments remaining
-    if the_student.student_number == '8104918':
-        pass
-    elif the_student.runs_used_so_far >= max_experiments_allowed:
+    if the_student.runs_used_so_far >= max_experiments_allowed:
         # Used token
         my_logger.debug('Limit reached for student number ' + student_number)
         t = loader.get_template("experiment-limit-reached.html")

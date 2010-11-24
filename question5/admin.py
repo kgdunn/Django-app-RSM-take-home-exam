@@ -7,6 +7,7 @@ class StudentAdmin(admin.ModelAdmin):
     list_filter = ('student_number', 'category', )
 
 class ExperimentAdmin(admin.ModelAdmin):
+    list_per_page = 2000
     list_display = ('student', 'factor_A', 'response', 'response_noisy', 'date_time')
 
 
