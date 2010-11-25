@@ -130,9 +130,6 @@ def spline(x, xx, yy):
 
     def s1(x):
         """ Spline connecting nodes 1 and 2 """
-        coef = np.array([ 0.0953, 0, 0.1457, 0.1000])
-        # Note: polynomial coefficients in Python go from the
-        #       highest power to the lower power.
         return np.polyval(coefsp[4:0:-1], x)
 
     def s2(x):
@@ -159,32 +156,7 @@ def spline(x, xx, yy):
 
     return y
 
-def lagrange(x, xx, yy):
-    """
-    Returns the p_3(x) Lagrange polynomial for 4 points.
-    >>> y = lagrange(x, xx, yy)
-
-    INPUTS:
-        x:  New value(s) of x at which to evaluate the
-            polynomial.  Can be a scalar, or a vector.
-        xx: A vector of x-values, 4 data points
-        yy: A vector of y-values, 4 data points
-    """
-
-    # Sub-functions used inside the ``lagrange`` function
-    def l1(x, xx):
-        return (x-xx[1])*(x-xx[2])*(x-xx[3]) / ( (xx[0]-xx[1])*(xx[0]-xx[2])*(xx[0]-xx[3]) )
-    def l2(x, xx):
-        return (x-xx[0])*(x-xx[2])*(x-xx[3]) / ( (xx[1]-xx[0])*(xx[1]-xx[2])*(xx[1]-xx[3]) )
-    def l3(x, xx):
-        return (x-xx[0])*(x-xx[1])*(x-xx[3]) / ( (xx[2]-xx[0])*(xx[2]-xx[1])*(xx[2]-xx[3]) )
-    def l4(x, xx):
-        return (x-xx[0])*(x-xx[1])*(x-xx[2]) / ( (xx[3]-xx[0])*(xx[3]-xx[1])*(xx[3]-xx[2]) )
-
-    # Calculates the Lagrange polynomial
-    return yy[0]*l1(x, xx) + yy[1]*l2(x, xx) + yy[2]*l3(x, xx) + yy[3]*l4(x, xx)
-
-def simulate_process(f_input, category):
+def simulate_process(f_input, category, find_min=False):
     """
     Returns the process output at the point(s) given by ``f_input``.
     The noise-free output is returned
@@ -216,8 +188,14 @@ def simulate_process(f_input, category):
     lo_new, hi_new = 278, 355.0
     slope = (hi_new-lo_new) / (hi - lo)
     nodes = (nodes - lo)*slope + lo_new
-
-    return spline(f_input, nodes, f_nodes)
+    
+    if not find_min:
+        return spline(f_input, nodes, f_nodes)
+    else:
+        temp_range = np.arange(lo_new, hi_new, 0.01)
+        conc_D = spline(temp_range, nodes, f_nodes)
+        min_D_idx = np.argmin(conc_D)
+        return (conc_D[min_D_idx], temp_range[min_D_idx])
 
 def get_IP_address(request):
     """
@@ -381,14 +359,15 @@ def render_next_experiment(the_student, request):
     else:
         level = '400'
     student = {'name': the_student.first_name + ' ' + the_student.last_name,
-              'level': level, 'number': the_student.student_number, 'email': the_student.email_address,
-              'runs_used_so_far': the_student.runs_used_so_far}
+              'level': level, 
+              'number': the_student.student_number, 
+              'email': the_student.email_address,
+              'runs_used_so_far': the_student.runs_used_so_far,
+              'category': the_student.category}
 
     prev_expts = get_experiment_list(the_student)
 
-    # Calculate bonus marks
-    student['profit_bonus'] = 1.0
-    student['runs_bonus'] = np.max([4.0-the_student.runs_used_so_far,0])/4.0
+    
 
     # Generate a picture of previous experiments
     filename = MEDIA_URL + plot_results(prev_expts, the_student.category)
@@ -396,9 +375,19 @@ def render_next_experiment(the_student, request):
     token_string = generate_random_token()
     Token.objects.get_or_create(token_string=token_string, student=the_student, active=True)
 
+    # Get true minimum:
+    if show_result:
+        min_D, min_T = simulate_process(300.0, the_student.category, find_min=True)
+        
+    # Calculate bonus marks
+    student['profit_bonus'] = 1.0
+    student['runs_bonus'] = np.max([4.0-the_student.runs_used_so_far,0])/4.0
+
     settings = {'max_experiments_allowed': max_experiments_allowed,
                 'token': token_string,
-                'figure_filename': filename}
+                'figure_filename': filename,
+                'min_D': min_D,
+                'min_T': min_T}
 
     my_logger.debug('Dealing with student = ' + str(the_student.student_number) + '(%s)' % get_IP_address(request) + '; has run ' + str(len(prev_expts)) + ' already.')
     t = loader.get_template("deal-with-experiment.html")
