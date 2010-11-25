@@ -282,16 +282,19 @@ def plot_results(expts, category):
         T = np.arange(lo_new, hi_new, 0.1)
         y = simulate_process(T, category)
         ax.plot(T, y, 'r-')
-        
-        min_D, min_T = simulate_process(300.0, category, find_min=True)
-        ax.plot(min_T, min_D, 'r*', markersize=10)
 
     for idx, entry_A in enumerate(factor_A):
         ax.plot(entry_A, response[idx], 'k.', ms=20)
         ax.text(entry_A+dx, response[idx]+dy, str(idx+1))
-
+        
     ax.set_xlim(plot_limits_A)
     ax.set_ylim(limits_response)
+        
+    if show_result:
+        min_D, min_T = simulate_process(300.0, category, find_min=True)
+        ax.plot(min_T, min_D, 'r*', markersize=15)
+        my_logger.debug('min_T = %s and min_D = %s' % (str(min_T), str(min_D)))
+        ax.text(275, limits_response[1]-2.5, "True solution at T = %s" % str(min_T))
 
     # Grid lines
     ax.grid(color='k', linestyle=':', linewidth=1)
