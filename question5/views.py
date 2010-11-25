@@ -282,6 +282,9 @@ def plot_results(expts, category):
         T = np.arange(lo_new, hi_new, 0.1)
         y = simulate_process(T, category)
         ax.plot(T, y, 'r-')
+        
+        min_D, min_T = simulate_process(300.0, category, find_min=True)
+        ax.plot(min_T, min_D, 'r*', markersize=10)
 
     for idx, entry_A in enumerate(factor_A):
         ax.plot(entry_A, response[idx], 'k.', ms=20)
