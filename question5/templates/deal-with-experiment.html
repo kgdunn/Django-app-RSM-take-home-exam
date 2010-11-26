@@ -98,8 +98,9 @@ Generate the next experiment at the following jacket temperature:
 
 <!--<p>Bonus due to profit: {{Student.profit_bonus}}-->
 <!--<p>Bonus due to runs: {{Student.runs_bonus}}-->
-<!--<p>Category: {{Student.category}} -->
-<!--<p>Category: {{Settings.min_D}} -->
-<!--<p>Category: {{Settings.min_T}} -->
+<p>Minimum temperature: {{Settings.min_T|floatformat:1}}
+<p>Concentration at minimum: {{Settings.min_D|floatformat:2}} (measured without error, i.e. +/- 1.0)
+<hr>
+<p>Category: {{Student.category}}
 
 {% endblock %}

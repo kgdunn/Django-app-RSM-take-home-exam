@@ -1,3 +1,10 @@
+#!/usr/local/bin/python2.6
+
+# Command line use
+import sys, os
+sys.path.extend(['/home/kevindunn/webapps/takehome/'])
+os.environ['DJANGO_SETTINGS_MODULE'] = 'takehome.settings'
+
 from django.template import loader, Context
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response
@@ -16,10 +23,6 @@ import os
 import numpy as np
 import hashlib as hashlib
 
-# Command line use
-#import sys, os
-#sys.path.extend(['/var/django/projects/'])
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'question5.settings'
 
 from takehome.question5.models import Student, Token, Experiment
 
@@ -248,7 +251,7 @@ def plot_results(expts, category):
     if len(response)==0:
         response = [0]
 
-    data_string = str(factor_A) + str(response) + str(category) + str(show_result)
+    data_string = str(factor_A) + str(response) + str(category) + str(show_result) + 'with-star'
     filename = hashlib.md5(data_string).hexdigest() + '.png'
     full_filename = MEDIA_DIR + filename
 
@@ -541,4 +544,23 @@ def download_values(request, token):
     c.save()
 
     return response
+
+if __name__ == '__main__':
+    threshold = 1.0
+    true_mins = {}
+    
+    for student in Student.objects.all():
+    
+        response = "Student: %s; Category: %s" % (student.student_number, student.category)
+        if student.category not in true_mins.keys():
+            min_D, min_T = simulate_process(300.0, student.category, find_min=True)
+            true_mins[student.category] = min_T
+        min_T = true_mins[student.category]
+      
+    
+        for item in Experiment.objects.select_related().filter(student=student.student_number):
+            if np.abs(item.factor_A - min_T) < threshold: #or np.abs(item.response_noisy - min_D) < threshold:
+                print(response)
+
+    print('Number of groups = %d' % len(Student.objects.all()))
 
