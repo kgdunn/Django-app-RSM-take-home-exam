@@ -251,7 +251,7 @@ def plot_results(expts, category):
     if len(response)==0:
         response = [0]
 
-    data_string = str(factor_A) + str(response) + str(category) + str(show_result) + 'with-star'
+    data_string = str(factor_A) + str(response) + str(category) + str(show_result) + 'with-star-error'
     filename = hashlib.md5(data_string).hexdigest() + '.png'
     full_filename = MEDIA_DIR + filename
 
@@ -295,6 +295,7 @@ def plot_results(expts, category):
         
     if show_result:
         min_D, min_T = simulate_process(300.0, category, find_min=True)
+        ax.errorbar(min_T, min_D, yerr=1.0, marker='None', ecolor='red', mew=3)
         ax.plot(min_T, min_D, 'r*', markersize=15)
         my_logger.debug('min_T = %s and min_D = %s' % (str(min_T), str(min_D)))
         ax.text(275, limits_response[1]-2.5, "True solution at T = %s" % str(min_T))
